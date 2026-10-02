@@ -3,15 +3,59 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-# Import calculation engine from your renamed calibration_engine.py
+# Import calculation engine from your calibration_engine.py
 from calibration_engine import UniversalCalibrationEngine, UncertaintyComponent, Distribution
 
 # --- Page Setup ---
-st.set_page_config(page_title="Measurement Uncertainty Dashboard", page_icon="⚖️️", layout="wide")
-st.title("⚖️ Universal Measurement Uncertainty Dashboard")
-st.caption("Powered by calibration_engine.py (GUM / ISO/IEC Guide 98-3 Compliant)")
+st.set_page_config(page_title="Measurement Uncertainty Dashboard", page_icon="⚖", layout="wide")
 
-# --- Sidebar Inputs ---
+# --- Theme Toggle & State Management ---
+if "theme" not in st.session_state:
+    st.session_state["theme"] = "Dark"
+
+st.sidebar.header("🎨 Appearance")
+theme_choice = st.sidebar.radio(
+    "Select Theme Mode:",
+    ["Dark Mode 🌙", "Light Mode ☀️"],
+    index=0 if st.session_state["theme"] == "Dark" else 1,
+    horizontal=True
+)
+
+st.session_state["theme"] = "Dark" if "Dark" in theme_choice else "Light"
+
+# --- Dynamic CSS Injection for Light/Dark Modes ---
+if st.session_state["theme"] == "Dark":
+    bg_color = "#0e1117"
+    card_bg = "#1e222a"
+    text_color = "#ffffff"
+    plotly_template = "plotly_dark"
+    pie_colors = ["#3B82F6", "#1D4ED8", "#F43F5E", "#EF4444", "#10B981"]
+else:
+    bg_color = "#f8f9fa"
+    card_bg = "#ffffff"
+    text_color = "#1f2937"
+    plotly_template = "plotly_white"
+    pie_colors = ["#2563EB", "#1D4ED8", "#E11D48", "#DC2626", "#059669"]
+
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-color: {bg_color};
+        color: {text_color};
+    }}
+    div[data-testid="stMetricValue"] {{
+        color: {text_color};
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+st.title("⚖️ Universal Measurement Uncertainty Dashboard")
+st.caption("Powered by calibration_engine.py (ISO/IEC Guide 98-3 Compliant)")
+
+# --- Sidebar Calibration Inputs ---
 st.sidebar.header("1. Calibration Setup")
 
 param_options = ["Temperature", "Pressure", "Mass / Weight", "Voltage / Electrical", "Custom Parameter"]
@@ -28,14 +72,14 @@ default_units = {
 unit = st.sidebar.text_input("Measurement Unit", value=default_units[selected_param])
 coverage_factor_k = st.sidebar.number_input("Coverage Factor (k)", min_value=1.0, max_value=5.0, value=2.0, step=0.1)
 
-# Preset Button: Load 100°C Example from Handwritten Notes
+# Preset Button: Load Example
 if st.sidebar.button("📋 Load Handwritten Notes Example (100 °C)"):
     st.session_state["ref_readings"] = [100.1, 100.0, 100.2, 100.1, 100.1]
     st.session_state["uut_readings"] = [101.0, 101.0, 101.1, 101.0, 101.0]
     st.session_state["type_b_preset"] = True
     st.rerun()
 
-# --- Main Dashboard ---
+# --- Main Dashboard Setup ---
 col_left, col_right = st.columns([1, 1])
 
 with col_left:
@@ -64,15 +108,14 @@ with col_right:
     stab_val = st.number_input(f"Stability Limit ({unit})", value=0.05 if is_preset else 0.00, format="%.4f")
     uni_val = st.number_input(f"Uniformity / Drift ({unit})", value=0.10 if is_preset else 0.00, format="%.4f")
 
-# --- Execute Calculations via Python Engine ---
+# --- Calculations using calibration_engine.py ---
 if len(ref_vals) >= 2 and len(ref_vals) == len(uut_vals):
-    # Initialize engine from calibration_engine.py
     engine = UniversalCalibrationEngine(parameter_name=selected_param, unit=unit)
 
-    # 1. Process Type A
+    # 1. Type A
     stats = engine.process_repeatability_type_a(uut_readings=uut_vals, ref_readings=ref_vals)
 
-    # 2. Process Type B
+    # 2. Type B
     engine.add_component(UncertaintyComponent("Reference Standard", ref_std_val, Distribution.NORMAL, k_factor=ref_std_k))
     engine.add_component(UncertaintyComponent("UUT Resolution", uut_res_val / np.sqrt(4), Distribution.RECTANGULAR))
     
@@ -81,10 +124,10 @@ if len(ref_vals) >= 2 and len(ref_vals) == len(uut_vals):
     if uni_val > 0:
         engine.add_component(UncertaintyComponent("Uniformity", uni_val, Distribution.RECTANGULAR))
 
-    # 3. Calculate Budget
+    # 3. Budget
     budget_results = engine.calculate_budget(coverage_factor=coverage_factor_k)
 
-    # --- Display Summary Table & Visuals ---
+    # --- Display Summary ---
     st.markdown("---")
     st.subheader("4. Combined Uncertainty Budget Table")
 
@@ -103,19 +146,26 @@ if len(ref_vals) >= 2 and len(ref_vals) == len(uut_vals):
         "Variance (u_i²)": "{:.8f}"
     }), use_container_width=True)
 
-    # Key Performance Metric Cards
+    # Metric Cards
     c1, c2, c3 = st.columns(3)
     c1.metric(f"Mean Error ({unit})", f"{engine.mean_error:+.4f}")
     c2.metric(f"Combined Std Unc u_c ({unit})", f"{budget_results['combined_standard_uncertainty']:.6f}")
     c3.metric(f"Expanded Uncertainty U (k={coverage_factor_k:g})", f"±{budget_results['expanded_uncertainty']:.4f}")
 
-    # Pareto Chart
+    # --- Theme-Matched Plotly Donut Chart ---
     fig = px.pie(
         df_budget, 
         values="Variance (u_i²)", 
         names="Source", 
         title=f"Uncertainty Component Contribution ({selected_param})",
-        hole=0.4
+        hole=0.4,
+        template=plotly_template,
+        color_discrete_sequence=pie_colors
+    )
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        margin=dict(t=50, b=20, l=20, r=20)
     )
     st.plotly_chart(fig, use_container_width=True)
 
