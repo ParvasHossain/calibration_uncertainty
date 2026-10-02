@@ -1,94 +1,46 @@
 # ⚖️ Universal Measurement Uncertainty Dashboard
 
-An **ISO/IEC 17025** and **ISO/IEC Guide 98-3 (GUM)** compliant measurement uncertainty calculator and calibration dashboard. Built using **Python**, **Streamlit**, and **Plotly**.
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-FF4B4B?logo=streamlit&logoColor=white)
+![Compliance](https://img.shields.io/badge/Standard-ISO%2FIEC%2017025-green)
+![GUM Compliant](https://img.shields.io/badge/Math-ISO%2FIEC%20Guide%2098--3-orange)
 
-## 📌 Features
+An **ISO/IEC 17025** and **ISO/IEC Guide 98-3 (GUM)** compliant measurement uncertainty engine and interactive calibration dashboard built with Python, Streamlit, and Plotly.
 
-* **Universal Parameter Support**: Performs calibration calculations for Temperature, Pressure, Mass, Voltage, Flow Rate, or any custom unit.
+---
 
-* **Type A Evaluation**: Automatically processes repeated measurement series to evaluate standard error of the mean ($u_A$) and sample standard deviation ($S$).
+## 📌 Project Overview
 
-* **Type B Budget Manager**: Supports Normal, Rectangular ($\sqrt{3}$), Digital Resolution ($\sqrt{12}$), U-Shaped ($\sqrt{2}$), and Triangular ($\sqrt{6}$) probability distributions.
+This application provides a universal, parameter-agnostic engine for evaluating measurement uncertainty across **Temperature, Pressure, Mass, Voltage, Flow Rate**, or any custom industrial calibration parameter. It automates:
+* **Type A Uncertainty Evaluation:** Sample standard deviation & standard error from repeated readings.
+* **Type B Uncertainty Evaluation:** Probability distributions (Normal, Rectangular, U-Shaped, Triangular).
+* **Root-Sum-of-Squares (RSS) Engine:** Combined standard uncertainty ($u_c$) and expanded uncertainty ($U$).
+* **Pareto Variance Breakdown:** Interactive visualization of uncertainty source contributions.
 
-* **Root-Sum-of-Squares (RSS) Engine**: Computes combined standard uncertainty ($u_c$) and expanded uncertainty ($U$) using customizable coverage factors ($k = 1.0, 2.0, 3.0$).
+---
 
-* **Visual Pareto Analysis**: Interactive Plotly variance contribution donut charts.
+## 📊 Mathematical Foundations (GUM Standards)
 
-* **Theme Switching**: Built-in Dark Mode 🌙 and Light Mode ☀️ toggle with dynamic styling.
+### 1. Mean Measurement Error ($\bar{E}$)
+$$\bar{E} = \frac{1}{n} \sum_{i=1}^{n} (x_{\text{UUT},i} - x_{\text{Ref},i})$$
 
-* **Handwritten Notes Preset**: One-click preset loader to reproduce sample calibration worksheets.
+### 2. Type A Standard Uncertainty ($u_A$)
+$$u_A = \frac{S}{\sqrt{n}}$$
+
+### 3. Combined Standard Uncertainty ($u_c$)
+$$u_c = \sqrt{u_A^2 + u_{\text{ref}}^2 + u_{\text{res}}^2 + u_{\text{stab}}^2 + u_{\text{uni}}^2}$$
+
+### 4. Expanded Uncertainty ($U$)
+$$U = k \times u_c \quad (k = 2.0 \text{ for } \approx 95\% \text{ confidence})$$
+
+---
 
 ## 📁 Repository Structure
 
-```
+```text
 calibration_uncertainty/
-├── calibration_engine.py   # Core GUM calculation engine & dataclasses
-├── app.py                  # Streamlit UI Dashboard & visualization script
-├── README.md               # Project documentation
-└── requirements.txt        # Python package dependencies
-
-```
-
-## 🚀 Quick Start & Installation
-
-### 1. Prerequisites
-
-Ensure you have **Python 3.8+** installed on your system.
-
-### 2. Clone the Repository
-
-```
-git clone https://github.com/your-username/calibration-uncertainty-dashboard.git
-cd calibration-uncertainty-dashboard
-
-```
-
-### 3. Install Dependencies
-
-```
-pip install -r requirements.txt
-
-```
-
-*(Or manually install: `pip install streamlit numpy pandas plotly`)*
-
-### 4. Run the Streamlit Dashboard
-
-```
-python -m streamlit run app.py
-
-```
-
-## 📊 Standard Uncertainty Formulas (GUM Standards)
-
-1. **Mean Measurement Error (**$\bar{E}$**):**
-   
-
-   $$
-   \bar{E} = \frac{1}{n} \sum_{i=1}^{n} (x_{\text{UUT}, i} - x_{\text{Ref}, i})
-   $$
-
-2. **Type A Uncertainty (**$u_A$**):**
-   
-
-   $$
-   u_A = \frac{S}{\sqrt{n}}
-   $$
-
-3. **Combined Standard Uncertainty (**$u_c$**):**
-   
-
-   $$
-   u_c = \sqrt{u_A^2 + u_{\text{ref}}^2 + u_{\text{res}}^2 + u_{\text{stab}}^2 + u_{\text{uni}}^2}
-   $$
-
-4. **Expanded Uncertainty (**$U$**):**
-   
-
-   $$
-   U = k \times u_c \quad (k = 2.0 \text{ for } \approx 95\% \text{ confidence})
-   $$
-
-## 📜 License
-
-Distributed under the **MIT License**. Free for academic, personal, and commercial calibration laboratory use.
+│
+├── calibration_engine.py   # Core GUM calculation logic
+├── app.py                 # Streamlit interactive UI dashboard
+├── README.md              # Project documentation
+└── requirements.txt        # Dependencies
